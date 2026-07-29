@@ -54,7 +54,41 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
   }
 }
 
-export async function loginUser(req: Request, res: Response): Promise<void> {}
+export async function loginUser(req: Request, res: Response): Promise<void> {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      res.status(400).json({ message: "Please provide email and password" });
+      return;
+    }
+
+    const user = await User.findOne({ email: email });
+    if (!user) {
+      res.status(401).json({ message: "Invalid email or password" });
+      return;
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password || "");
+
+    if (!isMatch) {
+      res.status(401).json({ message: "Invalid email or password" });
+      return;
+    }
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      token: generateToken(user._id.toString()),
+    });
+  } catch (err: any) {
+    console.error(err);
+    res.status(400).json({ message: err.message });
+  }
+}
 
 // Get user profile
 // GET /api/auth/me
