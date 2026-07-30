@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import config from "../config/config.js";
 import { User } from "../models/User.model.js";
 import bcrypt from "bcrypt";
+import { AuthRequest } from "../middlewares/auth.js";
 
 const generateToken = (id: string) => {
   return jwt.sign({ id }, config.JWT_SECRET as string, { expiresIn: "30d" });
@@ -54,6 +55,9 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
   }
 }
 
+// Login user
+// POST /api/auth/login
+
 export async function loginUser(req: Request, res: Response): Promise<void> {
   try {
     const { email, password } = req.body;
@@ -92,9 +96,14 @@ export async function loginUser(req: Request, res: Response): Promise<void> {
 
 // Get user profile
 // GET /api/auth/me
-export async function getMe(req: Request, res: Response): Promise<void> {
+export async function getMe(req: AuthRequest, res: Response): Promise<void> {
   try {
-  } catch (err) {
+    if (!req.user) {
+      res.status(401).json({ message: "Not authorized" });
+    }
+    res.json(req.user);
+  } catch (err: any) {
     console.error(err);
+    res.status(400).json({ message: err.message });
   }
 }
