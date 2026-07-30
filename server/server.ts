@@ -1,8 +1,9 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import morgan from "morgan";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import config from "./config/config.js";
+import authRouter from "./routes/authRoutes.js";
 
 const app = express();
 
@@ -16,6 +17,16 @@ const port = config.PORT || 5000;
 
 app.get("/", (req: Request, res: Response) => {
   res.json({ message: "Server is Live" });
+});
+
+app.use("/api/auth", authRouter);
+
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error("Unhandled Error :", err);
+  res.status(500).json({
+    message: err.message || "Internal Server Error",
+    stack: config.NODE_ENV === "production" ? undefined : err.stack,
+  });
 });
 
 app.listen(port, () => {
