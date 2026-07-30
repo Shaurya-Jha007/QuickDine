@@ -43,3 +43,29 @@ export const protect = async (
     res.status(401).json({ message: "Not authorized, no token" });
   }
 };
+
+export const adminOnly = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): void => {
+  if (req.user && req.user.role === "admin") {
+    next();
+  } else {
+    res.status(403).json({ message: "Access denied, admin role required" });
+  }
+};
+
+export const ownerOnly = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction,
+): void => {
+  if (req.user && (req.user.role === "owner" || req.user.role === "admin")) {
+    next();
+  } else {
+    res
+      .status(403)
+      .json({ message: "Access denied, restaurant owner role required" });
+  }
+};
