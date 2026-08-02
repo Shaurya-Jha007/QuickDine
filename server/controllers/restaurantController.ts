@@ -1,5 +1,8 @@
 import type { Request, Response } from "express";
 import { Restaurant } from "../models/Restaurant.js";
+import jwt from "jsonwebtoken";
+import config from "../config/config.js";
+import { User } from "../models/User.model.js";
 
 // Get all restaurants with search and filters.
 // GET /api/restaurants
@@ -57,9 +60,15 @@ export async function getFeaturedRestaurant(
   res: Response,
 ): Promise<void> {
   try {
+    const featured: any = await Restaurant.find({
+      status: "approved",
+      $or: [{ featured: true, exclusive: true }],
+    }).limit(6);
+
+    res.json(featured);
   } catch (err: any) {
-    console.error(err);
-    res.status(400).json({ message: err.message });
+    console.error("Get featured restaurants error: ", err);
+    res.status(500).json({ message: "Server Error" });
   }
 }
 
@@ -70,6 +79,45 @@ export async function getRestaurantBySlug(
   res: Response,
 ): Promise<void> {
   try {
+    const restaurant = await Restaurant.findOne({ slug: req.params.slug });
+    if (!restaurant) {
+      res.status(404).json({ message: "Restaurant not found" });
+      return;
+    }
+
+    if (restaurant.status !== "approved") {
+      let isAuthorized: boolean = false;
+      if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith("Bearer")
+      ) {
+        try {
+          const token = req.headers.authorization.split(" ")[1];
+          const decoded = jwt.verify(token, config.JWT_SECRET as string) as {
+            id: string;
+          };
+          const user = await User.findById(decoded.id);
+
+          if (
+            user &&
+            (user.role === "admin" ||
+              (user.role === "owner" &&
+                restaurant.owner.toString() === user._id.toString()))
+          ) {
+            isAuthorized = true;
+          }
+        } catch (err) {
+          // Ignore token verification error.
+        }
+      }
+      if (!isAuthorized) {
+        res
+          .status(404)
+          .json({ message: "Restaurant not found or pending approval" });
+        return;
+      }
+    }
+    res.json(restaurant);
   } catch (err: any) {
     console.error(err);
     res.status(400).json({ message: err.message });
