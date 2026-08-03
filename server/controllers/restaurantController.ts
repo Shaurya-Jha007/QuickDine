@@ -131,6 +131,19 @@ export async function getRestaurantAvailability(
   res: Response,
 ): Promise<void> {
   try {
+    const { date } = req.query;
+    if (!date) {
+      res.status(400).json({ message: "Please provide a date" });
+      return;
+    }
+
+    const restaurant = await Restaurant.findById(req.params.id);
+    if (!restaurant) {
+      res.status(400).json({ message: "Restaurant not found" });
+      return;
+    }
+
+    const bookingDate = new Date(date as string);
   } catch (err: any) {
     console.error(err);
     res.status(400).json({ message: err.message });
