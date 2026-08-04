@@ -3,6 +3,7 @@ import { Restaurant } from "../models/Restaurant.js";
 import jwt from "jsonwebtoken";
 import config from "../config/config.js";
 import { User } from "../models/User.model.js";
+import { Booking } from "../models/Booking.js";
 
 // Get all restaurants with search and filters.
 // GET /api/restaurants
@@ -144,6 +145,27 @@ export async function getRestaurantAvailability(
     }
 
     const bookingDate = new Date(date as string);
+
+    const bookings = await Booking.find({
+      restaurant: restaurant._id,
+      date: bookingDate,
+      status: "confirmed",
+    });
+
+    const availability = restaurant.availableSlots.map((slot) => {
+      const bookedSeats = bookings
+        .filter((b) => b.time === slot)
+        .reduce((sum, b) => sum + b.guests, 0);
+      const totalSeats = restaurant.totalSeats || 20;
+      const availableSeats = Math.max(0, totalSeats - bookedSeats);
+      return {
+        time: slot,
+        availableSeats,
+        isAvailable: availableSeats > 0,
+      };
+    });
+
+    res.json(availability);
   } catch (err: any) {
     console.error(err);
     res.status(400).json({ message: err.message });
