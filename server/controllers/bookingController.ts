@@ -89,6 +89,13 @@ export async function getMyBookings(
   res: Response,
 ): Promise<void> {
   try {
+    const bookings = await Booking.find({
+      user: req.user?._id,
+    })
+      .populate("restaurant", "name location image address slug")
+      .sort({ date: -1, time: -1 });
+
+    res.json(bookings);
   } catch (err: any) {
     console.error(err);
     res.status(400).json({ message: err.message });
@@ -104,6 +111,27 @@ export async function cancelBooking(
   res: Response,
 ): Promise<void> {
   try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      res.status(404).json({ message: "Booking not found" });
+      return;
+    }
+
+    if (booking.user.toString() !== req.user?._id.toString()) {
+      res
+        .status(401)
+        .json({ message: "Not authorized to cancel this booking" });
+      return;
+    }
+    booking.status = "cancelled";
+    await booking.save();
+
+    const populatedBooking = await booking.populate(
+      "restaurant",
+      "name location image address",
+    );
+
+    res.json(populatedBooking);
   } catch (err: any) {
     console.error(err);
     res.status(400).json({ message: err.message });
