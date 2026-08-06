@@ -12,6 +12,6 @@ bookingRoutes.post("/", protect, createBooking);
 
 bookingRoutes.get("/my", protect, getMyBookings);
 
-bookingRoutes.get("/:id/cancel", protect, cancelBooking);
+bookingRoutes.put("/:id/cancel", protect, cancelBooking);
 
 export default bookingRoutes;
