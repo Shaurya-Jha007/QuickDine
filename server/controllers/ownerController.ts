@@ -1,6 +1,29 @@
 import { type Response } from "express";
 import type { AuthRequest } from "../middlewares/auth.js";
 import { Restaurant } from "../models/Restaurant.js";
+import { v2 as cloudinary } from "cloudinary";
+
+// Helper function to upload buffer to cloudinary
+
+const uploadToCloudinary = async (
+  fileBuffer: Buffer,
+): Promise<{ secure_url: string }> => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "QuickDine" },
+      (error, result) => {
+        if (error) {
+          return reject(error);
+        }
+        if (!result) {
+          return reject(new Error("Upload failed"));
+        }
+        resolve({ secure_url: result.secure_url });
+      },
+    );
+    stream.end(fileBuffer);
+  });
+};
 
 // Get owner's restaurant
 // GET /api/owner/restaurant
@@ -83,9 +106,10 @@ export async function createOwnerRestaurant(
     // Handle Image
 
     let imageUrl = "";
-    // if (req.file) {
-    //   // Handle Image upload.
-    // }
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer);
+      imageUrl = result.secure_url;
+    }
 
     const parsedTags =
       typeof tags === "string"
