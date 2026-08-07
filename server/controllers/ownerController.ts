@@ -2,6 +2,7 @@ import { type Response } from "express";
 import type { AuthRequest } from "../middlewares/auth.js";
 import { Restaurant } from "../models/Restaurant.js";
 import { v2 as cloudinary } from "cloudinary";
+import { Booking } from "../models/Booking.js";
 
 // Helper function to upload buffer to cloudinary
 
@@ -153,6 +154,53 @@ export async function updateOwnerRestaurant(
   res: Response,
 ): Promise<void> {
   try {
+    const restaurant = await Restaurant.findOne({ owner: req.user?._id });
+    if (!restaurant) {
+      res.status(404).json({ message: "Restaurant profile not found" });
+      return;
+    }
+    const {
+      name,
+      description,
+      cuisine,
+      priceRange,
+      location,
+      address,
+      chef,
+      tags,
+      availableSlots,
+      totalSeats,
+    } = req.body;
+
+    if (name) restaurant.name = name;
+    if (description) restaurant.description = description;
+    if (cuisine) restaurant.cuisine = cuisine;
+    if (priceRange) restaurant.priceRange = priceRange;
+    if (location) restaurant.location = location;
+    if (address) restaurant.address = address;
+    if (chef) restaurant.chef = chef;
+    if (totalSeats) restaurant.totalSeats = Number(totalSeats);
+    if (tags) {
+      restaurant.tags =
+        typeof tags === "string" ? tags.split(",").map((t) => t.trim()) : tags;
+    }
+
+    if (availableSlots) {
+      restaurant.availableSlots =
+        typeof availableSlots === "string"
+          ? availableSlots.split(",").map((s) => s.trim())
+          : availableSlots;
+    }
+
+    // Handle new image upload if any.
+
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file.buffer);
+      restaurant.image = result.secure_url;
+    }
+
+    const updated = await restaurant.save();
+    res.json(updated);
   } catch (err: any) {
     console.error(err);
     res.status(400).json({ message: err.message });
@@ -167,6 +215,20 @@ export async function getOwnerBookings(
   res: Response,
 ): Promise<void> {
   try {
+    const restaurant = await Restaurant.findOne({ owner: req.user?._id });
+
+    if (!restaurant) {
+      res.json(404).json({ message: "Restaurant profile not found" });
+      return;
+    }
+
+    const bookings = await Booking.find({
+      restaurant: restaurant._id,
+    })
+      .populate("user", "name email phone")
+      .sort({ date: -1, time: -1 });
+
+    res.json(bookings);
   } catch (err: any) {
     console.error(err);
     res.status(400).json({ message: err.message });
@@ -180,6 +242,33 @@ export async function updateBookingStatus(
   req: AuthRequest,
   res: Response,
 ): Promise<void> {
+  const { status } = req.body;
+  if (!status || !["confirmed", "pending", "completed"].includes(status)) {
+    res.status(400).json({ message: "Please enter a valid booking status" });
+    return;
+  }
+
+  const { id: bookingId } = req.params;
+
+  const booking = await Booking.findById(bookingId);
+
+  if (!booking) {
+    res.status(404).json({ message: "Booking not found." });
+    return;
+  }
+
+  const restaurant = await Restaurant.findById(booking.restaurant);
+  if (!restaurant || restaurant.owner.toString() !== req.user?._id.toString()) {
+    res.status(401).json({ message: "Not authorized to manage this booking" });
+    return;
+  }
+
+  booking.status = status;
+
+  await booking.save();
+
+  res.json(booking);
+
   try {
   } catch (err: any) {
     console.error(err);
