@@ -7,6 +7,7 @@ import authRouter from "./routes/authRoutes.js";
 import restaurantRouter from "./routes/restaurantRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import ownerRoutes from "./routes/ownerRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/restaurants", restaurantRouter);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/owner", ownerRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error("Unhandled Error :", err);
