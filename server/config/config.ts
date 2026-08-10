@@ -13,8 +13,13 @@ if (!process.env.PORT) {
 if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET not found in environment variables.");
 }
+
 if (!process.env.NODE_ENV) {
   throw new Error("NODE_ENV not found in environment variables.");
+}
+
+if (!process.env.CLOUDINARY_URL) {
+  throw new Error("CLOUDINARY_URL not found in environment variables.");
 }
 
 interface AppConfig {
@@ -22,6 +27,7 @@ interface AppConfig {
   PORT: number;
   JWT_SECRET: string;
   NODE_ENV: string;
+  CLOUDINARY_URL: string;
 }
 
 const config: AppConfig = {
@@ -29,6 +35,7 @@ const config: AppConfig = {
   PORT: Number(process.env.PORT),
   JWT_SECRET: process.env.JWT_SECRET,
   NODE_ENV: process.env.NODE_ENV,
+  CLOUDINARY_URL: process.env.CLOUDINARY_URL,
 } as const;
 
 export default config;
