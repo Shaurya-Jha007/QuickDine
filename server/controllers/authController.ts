@@ -38,7 +38,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
     });
 
     if (user) {
-      res.status(401).json({
+      res.status(201).json({
         _id: user._id,
         name: user.name,
         email: user.email,
