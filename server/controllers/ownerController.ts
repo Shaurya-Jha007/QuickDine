@@ -4,8 +4,6 @@ import { Restaurant } from "../models/Restaurant.js";
 import { v2 as cloudinary } from "cloudinary";
 import { Booking } from "../models/Booking.js";
 
-// Helper function to upload buffer to cloudinary
-
 const uploadToCloudinary = async (
   fileBuffer: Buffer,
 ): Promise<{ secure_url: string }> => {
@@ -57,7 +55,7 @@ export async function createOwnerRestaurant(
 ): Promise<void> {
   try {
     const existing = await Restaurant.findOne({ owner: req.user?._id });
-    if (!existing) {
+    if (existing) {
       res
         .status(400)
         .json({ message: "You already have a restaurant registered." });
