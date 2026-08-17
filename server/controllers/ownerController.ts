@@ -241,7 +241,7 @@ export async function updateBookingStatus(
   res: Response,
 ): Promise<void> {
   const { status } = req.body;
-  if (!status || !["confirmed", "pending", "completed"].includes(status)) {
+  if (!status || !["cancelled", "pending", "completed"].includes(status)) {
     res.status(400).json({ message: "Please enter a valid booking status" });
     return;
   }
