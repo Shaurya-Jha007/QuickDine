@@ -31,7 +31,7 @@ export async function approveRestaurant(
 ): Promise<void> {
   try {
     const { status } = req.body;
-    if (!status || !["approve", "reject", "pending"].includes(status)) {
+    if (!status || !["approved", "rejected", "pending"].includes(status)) {
       res
         .status(400)
         .json({ message: "Please provide a valid approval status" });
